@@ -1,4 +1,4 @@
 Omok-AI
 =======
 
-table game Omok AI program using VS2010 C++ (API), boost library
+table game Omok Artificial Intelligence(AI) program using VS2010 C++ (API), boost library
