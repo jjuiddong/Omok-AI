@@ -4,7 +4,6 @@
 
 namespace ai
 {
-
 	pair<Pos,int> RecursiveSearch( STable &table, const PIECE pieceType, const PIECE originalPieceType, const int count );
 
 
@@ -50,7 +49,6 @@ namespace ai
 		int score;
 	};
 
-
 	int g_totalCnt=0;
 }
 
@@ -81,7 +79,7 @@ GAME_STATE ai::SearchBestLocation( STable &table, const PIECE pieceType, OUT Pos
 			 양수인 경우 pieceType이 유리 한 상황
 			 음수인 경우 pieceType의 상대가 유리한 상황 
 
-			 리턴값 pair<BLACK 점수, WHITE 점수>
+			 리턴값 pair<위치, 점수>
  @date 2014-03-18
 */
 pair<Pos,int> ai::RecursiveSearch( STable &table, const PIECE pieceType, const PIECE originalPieceType, const int count )
@@ -488,9 +486,10 @@ linetype ai::GetLineType( STable &table, const CHECK_TYPE chkType, const PIECE p
 
 	// 수비옵션일 때는 양쪽의 empty구간을 1로 제한한다.
 	// 연속된 4개일때도 마찬가지.
-	if (removeSideEmpty ||
+	if (!cand.empty() &&
+		(removeSideEmpty ||
 		(((4 == pieceCnt) && (0 == emptyCnt)) ||
-		 (SEARCH_DEFENSE == option)))
+		 (SEARCH_DEFENSE == option))))
 	{ // 00111100 -> 011110
 		if ((cand[ 0].piece == 0) && (cand[ 1].piece == 0)) 
 		{ // pop_front
