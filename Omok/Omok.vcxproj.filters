@@ -1,0 +1,74 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="hearder">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="omok">
+      <UniqueIdentifier>{d33f504d-f89d-49b9-8337-a0832c7773db}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+    <None Include="small.ico">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Omok.ico">
+      <Filter>리소스 파일</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>hearder</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>hearder</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>hearder</Filter>
+    </ClInclude>
+    <ClInclude Include="Omok.h">
+      <Filter>hearder</Filter>
+    </ClInclude>
+    <ClInclude Include="global.h">
+      <Filter>omok</Filter>
+    </ClInclude>
+    <ClInclude Include="ai.h">
+      <Filter>omok</Filter>
+    </ClInclude>
+    <ClInclude Include="table.h">
+      <Filter>omok</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="Omok.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="ai.cpp">
+      <Filter>omok</Filter>
+    </ClCompile>
+    <ClCompile Include="global.cpp">
+      <Filter>omok</Filter>
+    </ClCompile>
+    <ClCompile Include="table.cpp">
+      <Filter>omok</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Omok.rc">
+      <Filter>리소스 파일</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
