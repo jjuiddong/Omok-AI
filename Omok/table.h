@@ -21,9 +21,14 @@ public:
 
 
 private:
+	enum {
+			MAX_BRUSH = 5,
+	};
+
 	GAME_STATE m_state;
 	STable m_table;
 	HBRUSH m_brushes[ MAX_BRUSH];
+	float m_procTime; //milli second
 };
 
 

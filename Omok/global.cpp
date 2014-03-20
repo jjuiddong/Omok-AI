@@ -214,15 +214,19 @@ linetype GetMinCombinationLineType(const linetype ltype)
 */
 int GetLinetypeScore(const linetype ltype)
 {
-	const linetype maxLinetype = IsCombinationLineType(ltype)? GetMaxCombinationLineType(ltype) : ltype;
-	const int pieceCnt0 = GetPieceCntFromlinetype(maxLinetype);
-	const int emptyCnt0 = GetEmptyCntFromlinetype(maxLinetype);
-	const int wallCnt0 = GetWallCntFromlinetype(maxLinetype);
+	if (IsCombinationLineType(ltype))
+	{
+		const linetype maxLinetype =  GetMaxCombinationLineType(ltype);
+		return GetLinetypeScore(maxLinetype);
+	}
+
+	const int pieceCnt0 = GetPieceCntFromlinetype(ltype);
+	const int emptyCnt0 = GetEmptyCntFromlinetype(ltype);
+	const int wallCnt0 = GetWallCntFromlinetype(ltype);
 	
 	if (pieceCnt0 > 6)
 	{
 		int a = 0;
-
 	}
 	else if (pieceCnt0 == 5)
 	{

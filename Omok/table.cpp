@@ -4,6 +4,12 @@
 #include "ai.h"
 
 
+#define CHECK_TIME_START __int64 freq, start, end; if (QueryPerformanceFrequency((_LARGE_INTEGER*)&freq))  {QueryPerformanceCounter((_LARGE_INTEGER*)&start);  
+// a는 float type milli second이고 b가 FALSE일때는 에러입니다
+#define CHECK_TIME_END(a,b) QueryPerformanceCounter((_LARGE_INTEGER*)&end); a=(float)((double)(end - start)/freq*1000); b=TRUE; } else b=FALSE;
+
+
+
 const POINT g_tableOffset = {18,48};
 const int GAPX = 25;
 const int GAPY = 25;
@@ -11,6 +17,7 @@ const int GAPY = 25;
 
 CTable::CTable() :
 	m_state(GAME)
+,	m_procTime(0)
 {
 
 }
@@ -127,6 +134,14 @@ void CTable::Render(HDC hdc)
 		else
 			TextOutA(hdc, 320, 4, msg[1].c_str(), msg[1].length());
 	}
+
+	// 오목 인공지능 계산에 걸린 시간 출력
+	{
+		stringstream ss;
+		ss << "ai process time(millisecond): " << m_procTime;
+		const string str = ss.str();
+		TextOutA(hdc, 10, 4, str.c_str(), str.length());
+	}
 }
 
 
@@ -157,10 +172,15 @@ int CTable::NextAIStep(const PIECE pieceType) //pieceType=WHITE
 		return -1;
 	}
 
-	Pos pos;
-	m_state = ai::SearchBestLocation(m_table, pieceType, pos);
-	if (GAME == m_state)
-		SetPiece(pos, pieceType);
+	bool err;
+	CHECK_TIME_START;
+	{
+		Pos pos;
+		m_state = ai::SearchBestLocation(m_table, pieceType, pos);
+		if (GAME == m_state)
+			SetPiece(pos, pieceType);
+	}
+	CHECK_TIME_END(m_procTime, err);
 
 	if (ai::IsGameComplete(m_table, pieceType))
 	{

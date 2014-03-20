@@ -22,8 +22,6 @@ using namespace  std;
 enum {
 	MAX_TABLE_X = 30,
 	MAX_TABLE_Y = 30,
-	
-	MAX_BRUSH = 5,
 };
 
 

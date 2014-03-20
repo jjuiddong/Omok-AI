@@ -2,12 +2,12 @@
 #include "stdafx.h"
 #include "ai.h"
 
+
 namespace ai
 {
 	pair<Pos,int> RecursiveSearch( STable &table, const PIECE pieceType, const PIECE originalPieceType, const int count );
 
-
-	enum GETLINETYPE_OPTION { SEARCH_CANDIDATE, SEARCH_LINE, SEARCH_DEFENSE };
+	enum GETLINETYPE_OPTION { SEARCH_CANDIDATE, SEARCH_DEFENSE };
 	bool GetCandidateLocation( STable &table, const PIECE piece, const GETLINETYPE_OPTION option,
 		OUT vector<SCandidate> &candidates, OUT map<Pos,SSearchInfo> &info );
 
@@ -16,19 +16,20 @@ namespace ai
 
 	void SearchCombination( INOUT vector<SCandidate> &candidates );
 	void MergeCandidate(const vector<SCandidate> &curCandidates, const vector<SCandidate> &oppositeCandidates, OUT vector<SCandidate> &out);
-	int CalcuateCandidateScore(const vector<SCandidate> &curCandidates, const vector<SCandidate> &oppositeCandidates);
+	int CalculateCandidateScore(const vector<SCandidate> &curCandidates, const vector<SCandidate> &oppositeCandidates);
 	Pos RandLocation(STable &table, const PIECE piece);
 
 
-	struct PosInfo{ 
+	struct PosInfo
+	{ 
 		PosInfo(Pos pos0, int piece0):pos(pos0),piece(piece0) {}
 		Pos pos;
 		int piece;
 	};
 	bool CompareLines(const vector<PosInfo> &line, const string &pieces);
 
-
-	struct SResultInfo {
+	struct SResultInfo 
+	{
 		SResultInfo(	int result0, Pos pos0, linetype ltype0,PIECE pieceType0) : result(result0), pos(pos0), ltype(ltype0), pieceType(pieceType0) {}
 		bool operator<(const SResultInfo &rhs) {
 			return (result == rhs.result)? CompareLineType(ltype, rhs.ltype) : result < rhs.result;
@@ -39,7 +40,8 @@ namespace ai
 		PIECE pieceType;
 	};
 
-	struct SMergeInfo {
+	struct SMergeInfo 
+	{
 		SMergeInfo(Pos pos0, linetype ltype0, int score0) : pos(pos0), ltype(ltype0), score(score0) {}
 		bool operator<(const SMergeInfo &rhs) {
 			return score < rhs.score;
@@ -100,7 +102,7 @@ pair<Pos,int> ai::RecursiveSearch( STable &table, const PIECE pieceType, const P
 
 	if ((count <= 0) && (pieceType == originalPieceType))// max search depth
 	{
-		const int score = CalcuateCandidateScore(curCandidate, oppositeCandidate);
+		const int score = CalculateCandidateScore(curCandidate, oppositeCandidate);
 		return pair<Pos,int>(Pos(-1,-1), score);
 	}
 
@@ -112,12 +114,12 @@ pair<Pos,int> ai::RecursiveSearch( STable &table, const PIECE pieceType, const P
 		Pos pos = RandLocation(table, pieceType);
 		candidates.push_back(SCandidate(pos, 0));
 	}
-
+	
 	int procCnt = 0;
 	int maxCnt = 3;
 	vector<SResultInfo> results;
 	results.reserve(10);
-	BOOST_FOREACH (auto &cand, candidates)
+	BOOST_REVERSE_FOREACH (auto &cand, candidates)
 	{
 		if (++procCnt > maxCnt)
 			break;
@@ -214,6 +216,8 @@ PIECE ai::GetPiece(STable &table, const Pos &pos)
 
 /**
  @brief Get Candidate Location
+			가장 좋은 수는 candidates 의 back() 에 있다.
+			높은점수 순서대로 오름차순으로 정렬된다.
  @date 2014-03-15
 */
 bool ai::GetCandidateLocation( STable &table, const PIECE piece,  const GETLINETYPE_OPTION option, 
@@ -221,32 +225,67 @@ bool ai::GetCandidateLocation( STable &table, const PIECE piece,  const GETLINET
 {
 	if ((piece != WHITE) && (piece != BLACK)) return false;
 
-	const vector<Pos> &pieces = (piece == WHITE)? table.whites : table.blacks;
-	candidates.reserve(pieces.size());
+	CHECK_TYPE chktypes[4] = {CHECK_ROW, CHECK_COL, CHECK_SLASH_LEFT, CHECK_SLASH_RIGHT};
 
-	for (unsigned int i=0; i < pieces.size(); ++i)
+	const vector<Pos> &pieces = (piece == WHITE)? table.whites : table.blacks;
+
+	vector<SCandidate> cand;
+	cand.reserve(pieces.size());
+
+	BOOST_FOREACH (auto &pos, pieces)
  	{
-		const Pos p0 =  pieces[ i];
 		for (int c=0; c < 4; ++c)
 		{
-			CHECK_TYPE chktypes[4] = {CHECK_ROW, CHECK_COL, CHECK_SLASH_LEFT, CHECK_SLASH_RIGHT};
-			CHECK_TYPE ctype = chktypes[ c];
 			vector<Pos> out;
-			const linetype ltype = GetLineType(table, ctype, piece, pieces[ i], option, info, out);
+			const linetype ltype = GetLineType(table, chktypes[ c], piece, pos, option, info, out);
 			if ((GetPieceCntFromlinetype(ltype) == 5) && (GetEmptyCntFromlinetype(ltype) == 0))
 				return true; // 오목, 게임오버.
 
 			if (!out.empty())
 			{
-				for (unsigned int k=0; k < out.size(); ++k)
-					candidates.push_back(SCandidate(out[ k], ltype));
+				BOOST_FOREACH (auto &p0, out)
+					cand.push_back(SCandidate(p0, ltype));
 			}
 		}
 	}
 
-	SearchCombination(candidates);
-	std::sort(candidates.begin(), candidates.end());
+	SearchCombination(cand);
+
+	//----------------------------------------------------------------------------------
+	// candidate 정렬.
+	vector<int> scores(cand.size());
+	for (unsigned int i=0; i < cand.size(); ++i)
+		scores[ i] = GetLinetypeScore(cand[ i].ltype);
+
+	const int MAX_CANDIDATE_COUNT = 5;
+	// 가장 높은 우선순위의 Location 을 MAX_CANDIDATE_COUNT 개만 찾아 리턴한다.
+	int count = 0;
+	while ((count < MAX_CANDIDATE_COUNT) && (count < (int)scores.size()))
+	{
+		int maxScore = -10000;
+		int maxIdx = -1;
+		for (unsigned int i=0; i < scores.size(); ++i)
+		{
+			if (maxScore < scores[ i])
+			{
+				maxScore = scores[ i];
+				maxIdx = (int)i;
+			}
+		}
+		// find!!
+		if (maxIdx >= 0)
+		{
+			++count;
+			scores[ maxIdx] = -10000;// initialize
+			candidates.push_back( SCandidate(cand[ maxIdx].pos, cand[ maxIdx].ltype) );
+		}
+	}
+
+	//std::sort(candidates.begin(), candidates.end());
 	std::reverse(candidates.begin(), candidates.end());
+	//----------------------------------------------------------------------------------
+
+
 	return false;
 }
 
@@ -353,7 +392,7 @@ linetype ai::GetLineType( STable &table, const CHECK_TYPE chkType, const PIECE p
 	} // while
 
 
-	// calcuate empty piece count
+	// calculate empty piece count
 	bool startPiece = false;
 	int emptyCnt = 0;
 	BOOST_FOREACH (auto &c, cand)
@@ -569,7 +608,7 @@ void ai::SearchCombination( INOUT vector<SCandidate> &candidates )
 
 		if (kv.second.size() >= 2)
 		{
-			const linetype ltype = MergeLineType(kv.second.back().ltype, kv.second[ kv.second.size()-2].ltype);
+			const linetype ltype = MergeLineType(kv.second[ kv.second.size()-1].ltype, kv.second[ kv.second.size()-2].ltype);
 			kv.second.clear();
 			kv.second.push_back(SCandidate(kv.first, ltype));
 		}
@@ -587,27 +626,28 @@ void ai::SearchCombination( INOUT vector<SCandidate> &candidates )
 
 
 /**
- @brief candidate0-1 조합을 합쳐서 우선순위가 높은 순서대로 정렬한다.
+ @brief candidate0-1 조합을 합쳐서 우선순위가 높은 점수로 오름차순으로 정렬한다.
  @date 2014-03-18
 */
-void ai::MergeCandidate(const vector<SCandidate> &curCandidates, const vector<SCandidate> &oppoisiteCandidates, 
+void ai::MergeCandidate(const vector<SCandidate> &cur, const vector<SCandidate> &oppoisite, 
 	OUT vector<SCandidate> &out)
 {
-	if (curCandidates.empty() && oppoisiteCandidates.empty())
+	if (cur.empty() && oppoisite.empty())
 		return;
 
+	const int MAX_PROC_COUNT = 5;
 	vector<SMergeInfo> m;
-	m.reserve(curCandidates.size() + oppoisiteCandidates.size());
+	m.reserve(cur.size() + oppoisite.size());
 	
-	BOOST_FOREACH (auto &cand, curCandidates)
-		m.push_back( SMergeInfo(cand.pos, cand.ltype, GetLinetypeScore(cand.ltype)+5) );
+	for (int i=cur.size()-1; ((cur.size()-i) < MAX_PROC_COUNT) && (i >= 0); --i)
+		m.push_back( SMergeInfo(cur[ i].pos, cur[ i].ltype, GetLinetypeScore(cur[ i].ltype)+5) );
 
-	BOOST_FOREACH (auto &cand, oppoisiteCandidates)
-		m.push_back( SMergeInfo(cand.pos, cand.ltype, GetLinetypeScore(cand.ltype)) );
+	for (int i=oppoisite.size()-1; ((oppoisite.size()-i) < MAX_PROC_COUNT) && (i >= 0); --i)
+		m.push_back( SMergeInfo(oppoisite[ i].pos, oppoisite[ i].ltype, GetLinetypeScore(oppoisite[ i].ltype)) );
 	
 	sort(m.begin(), m.end());
 
-	BOOST_REVERSE_FOREACH (auto &info, m)
+	BOOST_FOREACH (auto &info, m)
 		out.push_back( SCandidate(info.pos, info.ltype) );
 }
 
@@ -618,10 +658,10 @@ void ai::MergeCandidate(const vector<SCandidate> &curCandidates, const vector<SC
 			자신이 유리하면 양수, 불리하면 음수를 리턴하게 된다.
  @date 2014-03-18
 */
-int ai::CalcuateCandidateScore(const vector<SCandidate> &curCandidates, const vector<SCandidate> &oppositeCandidates)
+int ai::CalculateCandidateScore(const vector<SCandidate> &cur, const vector<SCandidate> &opposite)
 {
-	int curScore = (curCandidates.empty())? 0 : GetLinetypeScore(curCandidates[ 0].ltype);
-	int oppositeScore = (oppositeCandidates.empty())? 0 : GetLinetypeScore(oppositeCandidates[ 0].ltype);
+	int curScore = (cur.empty())? 0 : GetLinetypeScore(cur.back().ltype);
+	int oppositeScore = (opposite.empty())? 0 : GetLinetypeScore(opposite.back().ltype);
 
 	// 현재 수를 둘 사람에게 +5 점을 추가한다.
 	return curScore+5 - oppositeScore;
@@ -636,7 +676,7 @@ bool ai::IsGameComplete(STable &table, const PIECE pieceType)
 {
 	map<Pos,SSearchInfo> info;
 	vector<SCandidate> candidates;
-	if (GetCandidateLocation(table, pieceType, SEARCH_LINE, candidates, info))
+	if (GetCandidateLocation(table, pieceType, SEARCH_CANDIDATE, candidates, info))
 		return true;
 
 	return false;
