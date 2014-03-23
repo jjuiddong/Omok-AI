@@ -167,7 +167,7 @@ void CTable::Render(HDC hdc)
 	}
 	{ // Ε°Ό³Έν
 		stringstream ss;
-		ss << "tab key : display number";
+		ss << "tab key : display number, enter key : restart";
 		const string str = ss.str();
 		TextOutA(hdc, 10, 16, str.c_str(), str.length());
 	}

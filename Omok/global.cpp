@@ -45,23 +45,23 @@ const STable& STable::operator=(const STable &rhs)
 			ltype0 < ltype1
  @date 2014-03-17
 */
-bool CompareLineType(const linetype ltype0, const linetype ltype1)
+bool CompareLineType(const linetype ltype0, const linetype ltype1, const int alpha0, const int alpha1)
 {
 	const bool isComb0 = IsCombinationLineType(ltype0);
 	const bool isComb1 = IsCombinationLineType(ltype1);
 	if (isComb0 && isComb1)
 	{
-		return CompareCombinationLineType(ltype0, ltype1);
+		return CompareCombinationLineType(ltype0, ltype1, alpha0, alpha1);
 	}
 
 	if (isComb0 || isComb1)
 	{
-		return CompareOneSideCombinationLineType(ltype0, ltype1);
+		return CompareOneSideCombinationLineType(ltype0, ltype1, alpha0, alpha1);
 	}
 
 	const int score0 = GetLinetypeScore(ltype0);
 	const int score1 = GetLinetypeScore(ltype1);
-	return score0 < score1;
+	return score0+alpha0 < score1+alpha1;
 }
 
 
@@ -79,7 +79,7 @@ bool IsCombinationLineType(const linetype ltype)
  @brief 조합된 라인타입끼리 비교 operator< 
  @date 2014-03-17
 */
-bool CompareCombinationLineType(const linetype ltype0, const linetype ltype1)
+bool CompareCombinationLineType(const linetype ltype0, const linetype ltype1, const int alpha0, const int alpha1)
 {
 	const linetype ltype0Max = GetMaxCombinationLineType(ltype0);
 	const linetype ltype1Max = GetMaxCombinationLineType(ltype1);
@@ -91,9 +91,9 @@ bool CompareCombinationLineType(const linetype ltype0, const linetype ltype1)
 
 	if (score0Max == score1Max)
 	{
-		return CompareLineType(ltype0Min, ltype1Min);
+		return CompareLineType(ltype0Min, ltype1Min, alpha0, alpha1);
 	}
-	return score0Max < score1Max;
+	return score0Max+alpha0 < score1Max+alpha1;
 }
 
 
@@ -101,7 +101,7 @@ bool CompareCombinationLineType(const linetype ltype0, const linetype ltype1)
  @brief 한쪽만 조합된 라인타입일 때 비교
  @date 2014-03-17
 */
-bool CompareOneSideCombinationLineType(const linetype ltype0, const linetype ltype1)
+bool CompareOneSideCombinationLineType(const linetype ltype0, const linetype ltype1, const int alpha0, const int alpha1)
 {
 	linetype cltype0 = ltype0;
 	if (IsCombinationLineType(ltype0))
@@ -117,14 +117,14 @@ bool CompareOneSideCombinationLineType(const linetype ltype0, const linetype lty
 
 	const int score0Max = GetLinetypeScore(cltype0);
 	const int score1Max = GetLinetypeScore(cltype1);
-	if (score0Max == score1Max)
+	if (score0Max+alpha0 == score1Max+alpha1)
 	{
 		if (IsCombinationLineType(ltype0))
 			return false;
 		return true;
 	}
 
-	return score0Max < score1Max;
+	return score0Max+alpha0 < score1Max+alpha1;
 }
 
 

@@ -188,9 +188,9 @@ inline void SeparateLineType(const linetype ltype, OUT linetype &out0, OUT linet
 }
 
 
-bool CompareLineType(const linetype ltype0, const linetype ltype1);
-bool CompareCombinationLineType(const linetype ltype0, const linetype ltype1);
-bool CompareOneSideCombinationLineType(const linetype ltype0, const linetype ltype1);
+bool CompareLineType(const linetype ltype0, const linetype ltype1, const int alpha0=0, const int alpha1=0);
+bool CompareCombinationLineType(const linetype ltype0, const linetype ltype1, const int alpha0=0, const int alpha1=0);
+bool CompareOneSideCombinationLineType(const linetype ltype0, const linetype ltype1, const int alpha0=0, const int alpha1=0);
 bool IsCombinationLineType(const linetype ltype);
 linetype GetMaxCombinationLineType(const linetype ltype);
 linetype GetMinCombinationLineType(const linetype ltype);
