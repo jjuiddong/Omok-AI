@@ -144,14 +144,6 @@ struct STable
 	vector<Pos> blacks;
 };
 
-struct PosInfo
-{ 
-	PosInfo(Pos pos0, int piece0):pos(pos0),piece(piece0) {}
-
-	Pos pos;
-	int piece; // 0:empty, 1:piece
-};
-
 
 
 inline linetype GetLineType( const int pieceCnt, const int emptyCnt, const int firstCnt, const int lastCnt )

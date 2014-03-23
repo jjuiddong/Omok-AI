@@ -30,7 +30,6 @@ namespace ai
 	void MergeCandidate(const vector<SCandidate> &curCandidates, const vector<SCandidate> &oppositeCandidates, OUT vector<SCandidate> &out);
 	int CalculateCandidateScore(const vector<SCandidate> &curCandidates, const vector<SCandidate> &oppositeCandidates);
 	Pos RandLocation(STable &table, const PIECE piece);
-	//bool CompareLines(const vector<PosInfo> &line, const string &pieces);
 	Pos GetOffset(const CHECK_TYPE chkType);
 
 	struct SResultInfo 
@@ -384,10 +383,8 @@ bool ai::LineScanning(STable &table, const CHECK_TYPE chkType, const PIECE piece
 
 	Pos offset = GetOffset(chkType);
 
-	//Pos startPos(-1,-1);
 	startPos = Pos(-1,-1);
 	int pieceCnt = 0;
-	//wallCnt = 0;
 	int loopCnt = 0; // loopCnt=0 : 시작점 찾기,  loopCnt=1 : 스캐닝 시작.
 	while (loopCnt < 2)
 	{
@@ -399,10 +396,6 @@ bool ai::LineScanning(STable &table, const CHECK_TYPE chkType, const PIECE piece
 			const PIECE piece = GetPiece(table, p0);
 			if ((piece == WALL) || (piece == OppositePiece(pieceType)))
 			{
-				//++wallCnt;
-				//if (emptyContinue > 0)
-				//	--wallCnt;
-
 				if (0 == loopCnt) // 시작점 발견, loopCnt=1 에서 본격적으로 스캐닝한다.
 				{
 					startPos = p0 + offset;
@@ -411,7 +404,6 @@ bool ai::LineScanning(STable &table, const CHECK_TYPE chkType, const PIECE piece
 						int cnt = 0;
 						Pos tempP = p0+offset;
 						while (cnt < emptyContinue) {
-							//line.push_back(PosInfo(tempP,0));
 							lineStr += '0';
 							tempP += offset;
 							startPos += offset;
@@ -436,24 +428,19 @@ bool ai::LineScanning(STable &table, const CHECK_TYPE chkType, const PIECE piece
 				{
 					if (0 == loopCnt)
 					{
-						startPos = p0;// - offset;// - offset;
+						startPos = p0;
 
 						int cnt = 0;
 						Pos tempP = p0;
 						while (cnt < emptyContinue) {
-							//line.push_back(PosInfo(tempP,0));
 							lineStr += '0';
 							tempP += offset;
 							startPos += offset;
 							++cnt;
 						}
-
-						//line.push_back(PosInfo(p0,0));
-						//line.push_back(PosInfo(p0-offset,0));
 					}
 					else
 					{
-						//line.push_back(PosInfo(p0,0));
 						lineStr += '0';
 					}
 
@@ -463,7 +450,6 @@ bool ai::LineScanning(STable &table, const CHECK_TYPE chkType, const PIECE piece
 				{
 					if (1 == loopCnt) 
 					{
-						//line.push_back(PosInfo(p0,0));
 						lineStr += '0';
 					}
 				}
@@ -474,7 +460,6 @@ bool ai::LineScanning(STable &table, const CHECK_TYPE chkType, const PIECE piece
 
 				if (1 == loopCnt)
 				{
-					//line.push_back(PosInfo(p0,1));
 					lineStr += '1';
 					++pieceCnt;
 					info[ p0].check |= chkType;
@@ -711,28 +696,3 @@ Pos ai::RandLocation(STable &table, const PIECE piece)
 
 	return Pos(x,y);
 }
-
-//
-///**
-// @brief 나열된 돌의 순서가 같다면 true를 리턴한다.
-//		    pieces => 010101 , 11011, 1?1 -> 101, 111 모두 해당
-// @date 2014-03-19
-//*/
-//bool ai::CompareLines(const vector<PosInfo> &line, const string &pieces)
-//{
-//	if (line.size() != pieces.length())
-//		return false;
-//
-//	for (unsigned int i=0; i < line.size(); ++i)
-//	{
-//		if (pieces[ i] == '?')
-//			continue;
-//		if ((pieces[ i] == '0') && (line[ i].piece == 0))
-//			continue;
-//		if ((pieces[ i] == '1') && (line[ i].piece == 1))
-//			continue;
-//		return false;
-//	}
-//	return true;
-//}
-// 
