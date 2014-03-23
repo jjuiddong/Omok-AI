@@ -39,7 +39,7 @@ enum PIECE {
 	WALL,
 };
 
-typedef int linetype;
+typedef int linetype; // pieceCount + emptyCount + lineLength
 
 
 /**
@@ -74,6 +74,9 @@ struct Pos
 	}
 	Pos operator-(const Pos &rhs) const {
 		return Pos(x-rhs.x, y-rhs.y);
+	}
+	Pos operator*(const int &val) const {
+		return Pos(x*val, y*val);
 	}
 	const Pos& operator+=(const Pos &rhs) {
 		x+=rhs.x;
@@ -132,43 +135,56 @@ struct SSearchInfo
 
 struct STable
 {
-	PIECE pieces[ MAX_TABLE_X][ MAX_TABLE_Y];
-	vector<Pos> whites;
-	vector<Pos> blacks;
-
 	STable();
 	STable(const STable &t);
 	const STable& operator=(const STable &rhs);
+
+	PIECE pieces[ MAX_TABLE_X][ MAX_TABLE_Y];
+	vector<Pos> whites;
+	vector<Pos> blacks;
+};
+
+struct PosInfo
+{ 
+	PosInfo(Pos pos0, int piece0):pos(pos0),piece(piece0) {}
+
+	Pos pos;
+	int piece; // 0:empty, 1:piece
 };
 
 
 
-inline linetype GetLineType( const int pieceCnt, const int emptyCnt, const int wallCnt )
+inline linetype GetLineType( const int pieceCnt, const int emptyCnt, const int firstCnt, const int lastCnt )
 {
 	if (pieceCnt <= 0)
 		return 0;
-	return pieceCnt*100 + emptyCnt*10 + wallCnt;
+	return pieceCnt*1000 + emptyCnt*100 + firstCnt*10 + lastCnt;
 }
 inline int GetPieceCntFromlinetype( const linetype &type )
 {
-	return (type / 100) % 10;
+	return (type / 1000) % 10;
 }
 inline int GetEmptyCntFromlinetype( const linetype &type )
 {
+	return (type / 100) % 10;
+}
+inline int GetFirstCntFromlinetype( const linetype &type )
+{
 	return (type / 10) % 10;
 }
-inline int GetWallCntFromlinetype( const linetype &type )
+inline int GetLastCntFromlinetype( const linetype &type )
 {
 	return (type % 10);
 }
+
 inline linetype MergeLineType(const linetype ltype0, const linetype ltype1)
 {
-	return ltype0 * 1000 + ltype1;
+	return ltype0 * 10000 + ltype1;
 }
 inline void SeparateLineType(const linetype ltype, OUT linetype &out0, OUT linetype &out1)
 {
-	out0 = ltype % 1000;
-	out1 = ltype / 1000;
+	out0 = ltype % 10000;
+	out1 = ltype / 10000;
 }
 
 

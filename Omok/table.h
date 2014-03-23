@@ -18,6 +18,7 @@ public:
 	bool SetPiece(const Pos &pos, PIECE piece);
 	void BackPiece();//한수 뒤로
 	Pos ScreenPosToTablePos(const int x, const int y);
+	void DisplayPieceNumber(bool isDisplay);
 
 
 private:
@@ -29,7 +30,9 @@ private:
 	STable m_table;
 	HBRUSH m_brushes[ MAX_BRUSH];
 	float m_procTime; //milli second
+	bool m_isDisplayNumber;
 };
 
 
 inline GAME_STATE CTable::GetGameState() { return m_state; }
+inline void CTable::DisplayPieceNumber(bool isDisplay) {m_isDisplayNumber = isDisplay; }

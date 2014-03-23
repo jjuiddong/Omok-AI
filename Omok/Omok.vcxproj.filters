@@ -9,10 +9,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="hearder">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
-    </Filter>
     <Filter Include="omok">
       <UniqueIdentifier>{d33f504d-f89d-49b9-8337-a0832c7773db}</UniqueIdentifier>
     </Filter>
@@ -27,18 +23,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>hearder</Filter>
-    </ClInclude>
-    <ClInclude Include="targetver.h">
-      <Filter>hearder</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>hearder</Filter>
-    </ClInclude>
-    <ClInclude Include="Omok.h">
-      <Filter>hearder</Filter>
-    </ClInclude>
     <ClInclude Include="global.h">
       <Filter>omok</Filter>
     </ClInclude>
@@ -48,14 +32,23 @@
     <ClInclude Include="table.h">
       <Filter>omok</Filter>
     </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="Omok.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="separator.h">
+      <Filter>omok</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
-    <ClCompile Include="Omok.cpp">
-      <Filter>source</Filter>
-    </ClCompile>
     <ClCompile Include="ai.cpp">
       <Filter>omok</Filter>
     </ClCompile>
@@ -63,6 +56,15 @@
       <Filter>omok</Filter>
     </ClCompile>
     <ClCompile Include="table.cpp">
+      <Filter>omok</Filter>
+    </ClCompile>
+    <ClCompile Include="Omok.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="separator.cpp">
       <Filter>omok</Filter>
     </ClCompile>
   </ItemGroup>

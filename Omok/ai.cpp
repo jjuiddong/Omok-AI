@@ -1,40 +1,53 @@
 
 #include "stdafx.h"
 #include "ai.h"
+#include "separator.h"
 
 
 namespace ai
 {
-	pair<Pos,int> RecursiveSearch( STable &table, const PIECE pieceType, const PIECE originalPieceType, const int count );
+	struct SearchResult {
+		SearchResult(Pos &pos0, int score0, int depth0) : pos(pos0), score(score0), depth(depth0) {}
+		Pos pos;
+		int score;
+		int depth;
+	};
+	SearchResult RecursiveSearch( STable &table, const PIECE pieceType, const PIECE originalPieceType, const int count );
 
 	enum GETLINETYPE_OPTION { SEARCH_CANDIDATE, SEARCH_DEFENSE };
 	bool GetCandidateLocation( STable &table, const PIECE piece, const GETLINETYPE_OPTION option,
 		OUT vector<SCandidate> &candidates, OUT map<Pos,SSearchInfo> &info );
 
 	linetype GetLineType( STable &table, const CHECK_TYPE chkType, const PIECE piece, const Pos &pos, const GETLINETYPE_OPTION option,
-		INOUT map<Pos,SSearchInfo> &info, OUT vector<Pos> &candidates );
+		INOUT map<Pos,SSearchInfo> &info, OUT vector<SCandidate> &candidates );
+
+	bool LineScanning(STable &table, const CHECK_TYPE chkType, const PIECE piece, const Pos &pos, 
+		INOUT map<Pos,SSearchInfo> &info, OUT Pos &startPos, OUT string &lineStr);
+
+	void FilteringLineType( const GETLINETYPE_OPTION option, const int &pieceCnt, const int &emptyCnt, INOUT int &removeFirstCount, INOUT string &lineStr);
 
 	void SearchCombination( INOUT vector<SCandidate> &candidates );
 	void MergeCandidate(const vector<SCandidate> &curCandidates, const vector<SCandidate> &oppositeCandidates, OUT vector<SCandidate> &out);
 	int CalculateCandidateScore(const vector<SCandidate> &curCandidates, const vector<SCandidate> &oppositeCandidates);
 	Pos RandLocation(STable &table, const PIECE piece);
-
-
-	struct PosInfo
-	{ 
-		PosInfo(Pos pos0, int piece0):pos(pos0),piece(piece0) {}
-		Pos pos;
-		int piece;
-	};
-	bool CompareLines(const vector<PosInfo> &line, const string &pieces);
+	//bool CompareLines(const vector<PosInfo> &line, const string &pieces);
+	Pos GetOffset(const CHECK_TYPE chkType);
 
 	struct SResultInfo 
 	{
-		SResultInfo(	int result0, Pos pos0, linetype ltype0,PIECE pieceType0) : result(result0), pos(pos0), ltype(ltype0), pieceType(pieceType0) {}
+		SResultInfo(	int result0, int depth0, Pos pos0, linetype ltype0,PIECE pieceType0) : 
+			result(result0), depth(depth0), pos(pos0), ltype(ltype0), pieceType(pieceType0) {}
 		bool operator<(const SResultInfo &rhs) {
-			return (result == rhs.result)? CompareLineType(ltype, rhs.ltype) : result < rhs.result;
+			if (result == rhs.result) {
+				if (depth == rhs.depth)
+					return CompareLineType(ltype, rhs.ltype);
+				else
+					return depth < rhs.depth;
+			}
+			return result < rhs.result;
 		}
 		int result;
+		int depth;
 		Pos pos;
 		linetype ltype;
 		PIECE pieceType;
@@ -65,9 +78,9 @@ using namespace ai;
 GAME_STATE ai::SearchBestLocation( STable &table, const PIECE pieceType, OUT Pos &out )
 {
 	g_totalCnt = 0;
-	const pair<Pos,int> result = RecursiveSearch(table, pieceType, pieceType, 3);
+	SearchResult result = RecursiveSearch(table, pieceType, pieceType, 3);
 
-	out = result.first;
+	out = result.pos;
 	return GAME;
 }
 
@@ -84,7 +97,7 @@ GAME_STATE ai::SearchBestLocation( STable &table, const PIECE pieceType, OUT Pos
 			 리턴값 pair<위치, 점수>
  @date 2014-03-18
 */
-pair<Pos,int> ai::RecursiveSearch( STable &table, const PIECE pieceType, const PIECE originalPieceType, const int count )
+SearchResult ai::RecursiveSearch( STable &table, const PIECE pieceType, const PIECE originalPieceType, const int count )
 {
 	stringstream ss;
 	ss << "RecursiveSearch " << ++g_totalCnt << " curCnt " << count << std::endl;
@@ -97,13 +110,13 @@ pair<Pos,int> ai::RecursiveSearch( STable &table, const PIECE pieceType, const P
 
 	if (isOverOpposite || isOverCurrent)
 	{
-		return (isOverCurrent)? pair<Pos,int>(Pos(-1,-1),-100) : pair<Pos,int>(Pos(-1,-1),100);
+		return (isOverCurrent)? SearchResult(Pos(-1,-1),-100,100-count) : SearchResult(Pos(-1,-1),100,100-count);
 	}
 
 	if ((count <= 0) && (pieceType == originalPieceType))// max search depth
 	{
 		const int score = CalculateCandidateScore(curCandidate, oppositeCandidate);
-		return pair<Pos,int>(Pos(-1,-1), score);
+		return SearchResult(Pos(-1,-1), -score, 100-count);
 	}
 
 	vector<SCandidate> candidates;
@@ -116,7 +129,7 @@ pair<Pos,int> ai::RecursiveSearch( STable &table, const PIECE pieceType, const P
 	}
 	
 	int procCnt = 0;
-	int maxCnt = 3;
+	int maxCnt = 4;
 	vector<SResultInfo> results;
 	results.reserve(10);
 	BOOST_REVERSE_FOREACH (auto &cand, candidates)
@@ -126,17 +139,17 @@ pair<Pos,int> ai::RecursiveSearch( STable &table, const PIECE pieceType, const P
 
 		STable newTable = table;
 		SetPiece(newTable, cand.pos, pieceType);
-		const pair<Pos,int> r = RecursiveSearch(newTable, OppositePiece(pieceType), originalPieceType, count-1);
-		results.push_back( SResultInfo(r.second, cand.pos, cand.ltype, pieceType) );
+		const SearchResult r = RecursiveSearch(newTable, OppositePiece(pieceType), originalPieceType, count-1);
+		results.push_back( SResultInfo(r.score, r.depth, cand.pos, cand.ltype, pieceType) );
 	}
 
 	if (results.empty())
-		return pair<Pos,int>(Pos(-1,-1), -100);
+		return SearchResult(Pos(-1,-1), -100, count);
 
 	// 가장 높은 점수를 찾아 리턴한다.
 	std::sort(results.begin(), results.end());
 
-	return pair<Pos,int>(results.back().pos, -results.back().result); // 상대편 루틴으로 넘어가면서 result값은 부호가 바뀐다.
+	return SearchResult(results.back().pos, -results.back().result, results.back().depth); // 상대편 루틴으로 넘어가면서 result값은 부호가 바뀐다.
 }
 
 
@@ -236,15 +249,19 @@ bool ai::GetCandidateLocation( STable &table, const PIECE piece,  const GETLINET
  	{
 		for (int c=0; c < 4; ++c)
 		{
-			vector<Pos> out;
-			const linetype ltype = GetLineType(table, chktypes[ c], piece, pos, option, info, out);
-			if ((GetPieceCntFromlinetype(ltype) == 5) && (GetEmptyCntFromlinetype(ltype) == 0))
-				return true; // 오목, 게임오버.
+			vector<SCandidate> out;
+			GetLineType(table, chktypes[ c], piece, pos, option, info, out);
 
 			if (!out.empty())
 			{
-				BOOST_FOREACH (auto &p0, out)
-					cand.push_back(SCandidate(p0, ltype));
+				BOOST_FOREACH (auto &s, out)
+				{
+					if ((GetPieceCntFromlinetype(s.ltype) == 5) && (GetEmptyCntFromlinetype(s.ltype) == 0))
+						return true; // 오목, 게임오버.
+
+					if (s.ltype != 0)
+						cand.push_back(s);//SCandidate(p0, ltype));
+				}
 			}
 		}
 	}
@@ -253,31 +270,29 @@ bool ai::GetCandidateLocation( STable &table, const PIECE piece,  const GETLINET
 
 	//----------------------------------------------------------------------------------
 	// candidate 정렬.
-	vector<int> scores(cand.size());
-	for (unsigned int i=0; i < cand.size(); ++i)
-		scores[ i] = GetLinetypeScore(cand[ i].ltype);
 
 	const int MAX_CANDIDATE_COUNT = 5;
 	// 가장 높은 우선순위의 Location 을 MAX_CANDIDATE_COUNT 개만 찾아 리턴한다.
 	int count = 0;
-	while ((count < MAX_CANDIDATE_COUNT) && (count < (int)scores.size()))
+	while ((count < MAX_CANDIDATE_COUNT) && (count < (int)cand.size()))
 	{
-		int maxScore = -10000;
-		int maxIdx = -1;
-		for (unsigned int i=0; i < scores.size(); ++i)
+		int maxIdx = 0;
+		for (unsigned int i=0; i < cand.size(); ++i)
 		{
-			if (maxScore < scores[ i])
-			{
-				maxScore = scores[ i];
+			if (i == maxIdx)
+				continue;
+			if (cand[ i].ltype == 0)
+				continue;
+
+			if (CompareLineType(cand[ maxIdx].ltype, cand[ i].ltype))  // cand[ maxIdx].ltype < cand[ i].ltype
 				maxIdx = (int)i;
-			}
 		}
 		// find!!
 		if (maxIdx >= 0)
 		{
 			++count;
-			scores[ maxIdx] = -10000;// initialize
 			candidates.push_back( SCandidate(cand[ maxIdx].pos, cand[ maxIdx].ltype) );
+			cand[ maxIdx].ltype = 0;// initialize
 		}
 	}
 
@@ -295,10 +310,58 @@ bool ai::GetCandidateLocation( STable &table, const PIECE piece,  const GETLINET
              빈칸을 포함한 조합도 탐색한다.
  @date 2014-03-15
 */
-linetype ai::GetLineType( STable &table, const CHECK_TYPE chkType, const PIECE piece, const Pos &pos, 
-	const GETLINETYPE_OPTION option, OUT map<Pos,SSearchInfo> &info, OUT vector<Pos> &candidates )
+linetype ai::GetLineType( STable &table, const CHECK_TYPE chkType, const PIECE pieceType, const Pos &pos, 
+	const GETLINETYPE_OPTION option, OUT map<Pos,SSearchInfo> &info, OUT vector<SCandidate> &candidates )
 {
-	Pos offset;
+	string lineStr;
+	Pos startPos;
+	if (!LineScanning(table, chkType, pieceType, pos, info, startPos, lineStr))
+		return 0;
+
+	vector<string> strs;
+	separator::SeparateAll(lineStr, strs);
+
+	Pos linePos = startPos;
+	const Pos offset = GetOffset(chkType);
+	BOOST_FOREACH(const auto &str, strs)
+	{
+		string line = str;
+		int emptyCnt=0, firstCnt=0, lastCnt=0;
+		int pieceCnt = separator::GetPieceInfo(line, emptyCnt, firstCnt, lastCnt);
+		Pos p0 = linePos;
+		linePos += offset * line.length(); // next line pos
+		int rmFirstCnt = 0;
+		FilteringLineType(option, pieceCnt, emptyCnt, rmFirstCnt, line);
+		p0 += offset * rmFirstCnt;
+
+		emptyCnt = 0; firstCnt = 0; lastCnt = 0;
+		pieceCnt = separator::GetPieceInfo(line, emptyCnt, firstCnt, lastCnt);
+		const linetype ltype = ::GetLineType(pieceCnt, emptyCnt, firstCnt, lastCnt);
+		if ((pieceCnt == 5) && (emptyCnt==0))
+		{
+			candidates.push_back(SCandidate(p0, ltype));
+			return 0;
+		}
+
+		// 최종 후보지를 저장한다.
+		for (unsigned int i=0; i < line.length(); ++i)
+		{
+			if ('0' == line[i]) // empty location 이 후보지가 된다.
+				candidates.push_back(SCandidate(p0+(offset*i), ltype));
+		}
+	}
+
+	return 0;
+}
+
+
+/**
+ @brief 
+ @date 2014-03-21
+*/
+Pos ai::GetOffset(const CHECK_TYPE chkType)
+{
+	Pos offset(0,0);
 	switch (chkType)
 	{
 	case CHECK_ROW: offset = Pos(1,0); break;
@@ -306,14 +369,26 @@ linetype ai::GetLineType( STable &table, const CHECK_TYPE chkType, const PIECE p
 	case CHECK_SLASH_LEFT: offset = Pos(1,1); break;
 	case CHECK_SLASH_RIGHT: offset = Pos(1,-1); break;
 	}
+	return offset;
+}
 
-	vector<PosInfo> cand; // 0=empty pos, 1=piece, 
-	Pos startPos(-1,-1);
 
-	// line down/up
+/**
+ @brief 한 라인을 스캔해서 라인 정보를 리턴한다.
+ @date 2014-03-21
+*/
+bool ai::LineScanning(STable &table, const CHECK_TYPE chkType, const PIECE pieceType, const Pos &pos, 
+	INOUT map<Pos,SSearchInfo> &info, OUT Pos &startPos, OUT string &lineStr)
+{
+	const int ALLOW_MAX_EMPTYCNT = 3;
+
+	Pos offset = GetOffset(chkType);
+
+	//Pos startPos(-1,-1);
+	startPos = Pos(-1,-1);
 	int pieceCnt = 0;
-	int wallCnt = 0;
-	int loopCnt = 0;
+	//wallCnt = 0;
+	int loopCnt = 0; // loopCnt=0 : 시작점 찾기,  loopCnt=1 : 스캐닝 시작.
 	while (loopCnt < 2)
 	{
 		int emptyContinue = 0;
@@ -321,20 +396,27 @@ linetype ai::GetLineType( STable &table, const CHECK_TYPE chkType, const PIECE p
 
 		while (1)
 		{
-			const PIECE curPiece = GetPiece(table, p0);
-			if ((curPiece == WALL) || (curPiece == OppositePiece(piece)))
+			const PIECE piece = GetPiece(table, p0);
+			if ((piece == WALL) || (piece == OppositePiece(pieceType)))
 			{
-				++wallCnt;
-				if (emptyContinue > 0)
-					--wallCnt;
+				//++wallCnt;
+				//if (emptyContinue > 0)
+				//	--wallCnt;
 
-				if (0 == loopCnt)
+				if (0 == loopCnt) // 시작점 발견, loopCnt=1 에서 본격적으로 스캐닝한다.
 				{
-					startPos = p0 - offset;
+					startPos = p0 + offset;
 					if (emptyContinue > 0)
 					{
-						startPos -= offset;
-						cand.push_back(PosInfo(p0-offset,0));
+						int cnt = 0;
+						Pos tempP = p0+offset;
+						while (cnt < emptyContinue) {
+							//line.push_back(PosInfo(tempP,0));
+							lineStr += '0';
+							tempP += offset;
+							startPos += offset;
+							++cnt;
+						}
 					}
 				}
 				break;
@@ -344,33 +426,46 @@ linetype ai::GetLineType( STable &table, const CHECK_TYPE chkType, const PIECE p
 			if (info.end() != it)
 			{
 				if (chkType & it->second.check)
-				{
-					return 0; // already check
-				}
+					return false; // already check
 			}
 
-			if (curPiece == EMPTY)
+			if (piece == EMPTY)
 			{
 				++emptyContinue;
-				if (emptyContinue >= 2)
+				if (emptyContinue >= ALLOW_MAX_EMPTYCNT)
 				{
 					if (0 == loopCnt)
 					{
-						startPos = p0 - offset - offset;
-						cand.push_back(PosInfo(p0,0));
-						cand.push_back(PosInfo(p0-offset,0));
+						startPos = p0;// - offset;// - offset;
+
+						int cnt = 0;
+						Pos tempP = p0;
+						while (cnt < emptyContinue) {
+							//line.push_back(PosInfo(tempP,0));
+							lineStr += '0';
+							tempP += offset;
+							startPos += offset;
+							++cnt;
+						}
+
+						//line.push_back(PosInfo(p0,0));
+						//line.push_back(PosInfo(p0-offset,0));
 					}
 					else
 					{
-						cand.push_back(PosInfo(p0,0));
+						//line.push_back(PosInfo(p0,0));
+						lineStr += '0';
 					}
 
 					break;
 				}
 				else
 				{
-					if (1 == loopCnt)
-						cand.push_back(PosInfo(p0,0));
+					if (1 == loopCnt) 
+					{
+						//line.push_back(PosInfo(p0,0));
+						lineStr += '0';
+					}
 				}
 			}
 			else
@@ -379,204 +474,101 @@ linetype ai::GetLineType( STable &table, const CHECK_TYPE chkType, const PIECE p
 
 				if (1 == loopCnt)
 				{
-					cand.push_back(PosInfo(p0,1));
+					//line.push_back(PosInfo(p0,1));
+					lineStr += '1';
 					++pieceCnt;
 					info[ p0].check |= chkType;
 				}
 			}
 
-			p0 += ((loopCnt==0)? offset : -offset);
+			p0 += ((loopCnt==0)? -offset : offset);
 		} // while
 
 		++loopCnt;
 	} // while
 
 
-	// calculate empty piece count
-	bool startPiece = false;
-	int emptyCnt = 0;
-	BOOST_FOREACH (auto &c, cand)
+	// 0001000 -> 00100
+	// 00011000 -> 001100
+	// 0001101000 -> 00110100
+	if (lineStr.length() > 3)
 	{
-		if (!startPiece && (1 == c.piece))
-			startPiece = true;
-		if (startPiece && (0 == c.piece))
-			++emptyCnt;
+		if ((lineStr[ 0] == '0') && (lineStr[ 1] == '0') && (lineStr[ 2] == '0'))
+			lineStr.erase(0,1); // pop_front
+		const int len = lineStr.length();
+		if ((lineStr[ len-1] == '0') && (lineStr[ len-2] == '0') && (lineStr[ len-3] == '0'))
+			lineStr.pop_back();
 	}
-	startPiece = false;
-	BOOST_REVERSE_FOREACH(auto &c, cand)
+
+	// adjust start poisition
+	BOOST_FOREACH (auto &s, lineStr)
 	{
-		if (!startPiece && (1 == c.piece))
+		if (s == '1')
 			break;
-		--emptyCnt;
+		startPos -= offset;
 	}
-	//
 
-	// 11011 -> 11X11
-	// 10111 -> 1X111 ... etc
-	// 010110 -> 01X110 ... etc
+	return true;
+}
+
+
+/**
+ @brief pieces 배열을 필요에 따라 나누거나 제거한다.
+ @param pieces : 나열된 오목 배열 
+							0:빈자리 
+							1:돌이 있는자리.
+ @date 2014-03-21
+*/
+void ai::FilteringLineType( const GETLINETYPE_OPTION option, const int &pieceCnt, const int &emptyCnt, 
+	INOUT int &removeFirstCount, INOUT string &lineStr )
+{
+	if (lineStr.length() < 3)
+		return;
+
+	bool removeSide = false;
+	// 001101100 -> 11011
+	// 0101110 -> 10111 ... etc
 	if (((4 == pieceCnt) && (1 == emptyCnt)) ||
-		((3 == pieceCnt) && (1 == emptyCnt) && (0 == wallCnt)))
+		((3 == pieceCnt) && (1 == emptyCnt)) || // 010110 -> S1011S ... 
+		((3 == pieceCnt) && (2 == emptyCnt)) ) // 0101010 -> S10101S
 	{
-		// 양쪽의 emtpy 구간을 제거한다.
-		while (!cand.empty() && (cand.front().piece == 0))
-		{ // pop_front
-			std::rotate(cand.begin(), cand.begin()+1, cand.end());
-			cand.pop_back();
-		}
-		while (!cand.empty() && (cand.back().piece == 0))
-			cand.pop_back();
+		removeSide = true;
 	}
 
-	// 0111101X -> 01111
-	// X1111010 -> 10
-	if ((5 <= pieceCnt) && (1 == emptyCnt))
-	{
-		// 0111101X -> 01111
-		// 00111101X -> 01111
-		if (CompareLines(cand, "0111101") || CompareLines(cand, "00111101"))
-		{
-			cand.pop_back();
-			cand.pop_back();
-			// -> 01111, 001111
-			pieceCnt = 4;
-			emptyCnt = 0;
-			wallCnt = 1;
-		}
-		else
-		{
-			// 연속된 돌 갯수가 pieceCnt가 된다.
-			// 1110111 -> 111X111
-			int maxPieces = 0;
-			int cnt = 0;
-			BOOST_FOREACH(auto &c, cand)
-			{
-				if (c.piece == 1)
-				{
-					++cnt;
-				}
-				else
-				{
-					c.piece = -1; // X 후보지에서 제외.
-
-					if (maxPieces < cnt)
-						maxPieces = cnt;
-					cnt = 0;
-				}
-			}
-
-			pieceCnt = maxPieces;
-			wallCnt = max(wallCnt,1);
-			emptyCnt = 0;
-		}
-
-	}
-
-	bool removeSideEmpty = false;
-	if ((4 <= pieceCnt) && (2 <= emptyCnt))
-	{
-		// 110101, 1010101
-		if ((4 == pieceCnt)  && (2 == emptyCnt))
-		{
-			// nothing
-		}
-		else
-		{
-			//pieceCnt = 3;
-			//wallCnt = 0;
-			//removeSideEmpty = true;
-		}
-	}
-
-	// X1101011X -> X
-	if ((5 <= pieceCnt) && (2 <= emptyCnt))
-	{
-		// X1101011X -> X
-		if (wallCnt == 2)
-		{
-			if (CompareLines(cand, "1101011"))
-			{
-				pieceCnt = 0;
-				emptyCnt = 0;
-				wallCnt = 0;
-				cand.clear();
-			}
-		}
-
-		// 1110101
-		// 1011101
-	}
-
-	// 0111, 1110 -> 111
-	// wallCnt=2 로 변경
-	if ((3 == pieceCnt) && (0 == emptyCnt) && (1==wallCnt))
-	{
-		if (CompareLines(cand, "0111") || CompareLines(cand, "1110"))
-		{
-			wallCnt = 2;
-			removeSideEmpty = true;
-		}
-	}
-
+	bool removeSide2Empty = false;
 	// 3개이상 연속될 경우 양쪽 옆 empty는 1개로만 제한한다.
 	if (3 <= pieceCnt)
 	{
-		removeSideEmpty = true;
+		removeSide2Empty = true;
 	}
 
 	// 수비옵션일 때는 양쪽의 empty구간을 1로 제한한다.
-	// 연속된 4개일때도 마찬가지.
-	if (!cand.empty() &&
-		(removeSideEmpty ||
-		(((4 == pieceCnt) && (0 == emptyCnt)) ||
-		 (SEARCH_DEFENSE == option))))
-	{ // 00111100 -> 011110
-		if ((cand[ 0].piece == 0) && (cand[ 1].piece == 0)) 
-		{ // pop_front
-			std::rotate(cand.begin(), cand.begin()+1, cand.end());
-			cand.pop_back();
-		}
-
-		const int s = cand.size();
-		if ((cand[ s-1].piece == 0) && (cand[ s-2].piece == 0))
-			cand.pop_back();
-	}
-
-	// 연속된 돌이 5개 라면 pieceCnt를 5로 설정하고 리턴한다.
-	if (pieceCnt >= 6)
+	// 연속된 peice가 4개일때도 마찬가지.
+	// 00111100 -> S011110S
+	if (removeSide2Empty ||
+		(SEARCH_DEFENSE == option))
 	{
-		int cnt = 0;
-		BOOST_FOREACH (auto &c, cand)
-		{
-			if (1 == c.piece)
-			{
-				++cnt;
-			}
-			else
-			{
-				if (5 == cnt)
-					break;
-				cnt = 0;
-			}
-		}
-
-		if (5 == cnt)
-		{
-			pieceCnt = 5;
-			emptyCnt = 0;
-			wallCnt = 0;
-		}
+		if ((lineStr[ 0] == '0') && (lineStr[ 1] == '0'))
+			lineStr.front() = 'S';
+		const int len = lineStr.length();
+		if ((lineStr[ len-1] == '0') && (lineStr[ len-2] == '0'))
+			lineStr.back() = 'S';
 	}
 
-
-	BOOST_FOREACH (auto &c, cand)
+	// 00~~00 -> SS~~SS
+	if (removeSide)
 	{
-		if (0 == c.piece)
-		{
-			candidates.push_back(c.pos);
-		}
+		if (lineStr[ 0] == '0')
+			lineStr[ 0] = 'S';
+		if (lineStr[ 1] == '0')
+			lineStr[ 1] = 'S';
+		const int len = lineStr.length();
+		if (lineStr[ len-1] == '0')
+			lineStr[ len-1] = 'S';
+		if (lineStr[ len-2] == '0')
+			lineStr[ len-2] = 'S';
 	}
-
-	return ::GetLineType(pieceCnt, emptyCnt, wallCnt);
+	
 }
 
 
@@ -707,27 +699,27 @@ Pos ai::RandLocation(STable &table, const PIECE piece)
 	return Pos(x,y);
 }
 
-
-/**
- @brief 나열된 돌의 순서가 같다면 true를 리턴한다.
-		    pieces => 010101 , 11011, 1?1 -> 101, 111 모두 해당
- @date 2014-03-19
-*/
-bool ai::CompareLines(const vector<PosInfo> &line, const string &pieces)
-{
-	if (line.size() != pieces.length())
-		return false;
-
-	for (unsigned int i=0; i < line.size(); ++i)
-	{
-		if (pieces[ i] == '?')
-			continue;
-		if ((pieces[ i] == '0') && (line[ i].piece == 0))
-			continue;
-		if ((pieces[ i] == '1') && (line[ i].piece == 1))
-			continue;
-		return false;
-	}
-	return true;
-}
- 
+//
+///**
+// @brief 나열된 돌의 순서가 같다면 true를 리턴한다.
+//		    pieces => 010101 , 11011, 1?1 -> 101, 111 모두 해당
+// @date 2014-03-19
+//*/
+//bool ai::CompareLines(const vector<PosInfo> &line, const string &pieces)
+//{
+//	if (line.size() != pieces.length())
+//		return false;
+//
+//	for (unsigned int i=0; i < line.size(); ++i)
+//	{
+//		if (pieces[ i] == '?')
+//			continue;
+//		if ((pieces[ i] == '0') && (line[ i].piece == 0))
+//			continue;
+//		if ((pieces[ i] == '1') && (line[ i].piece == 1))
+//			continue;
+//		return false;
+//	}
+//	return true;
+//}
+// 

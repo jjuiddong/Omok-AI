@@ -163,6 +163,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				g_table.BackPiece();
 				::InvalidateRect(hWnd, NULL, TRUE);
 				break;
+
+			case VK_TAB:
+				{
+					static bool isDisplayNumber = false;
+					g_table.DisplayPieceNumber(isDisplayNumber = !isDisplayNumber);
+					::InvalidateRect(hWnd, NULL, TRUE);
+				}
+				break;
 			}
 		}
 		break;

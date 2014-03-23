@@ -49,13 +49,6 @@ bool CompareLineType(const linetype ltype0, const linetype ltype1)
 {
 	const bool isComb0 = IsCombinationLineType(ltype0);
 	const bool isComb1 = IsCombinationLineType(ltype1);
-	//const int pieceCnt0 = GetPieceCntFromlinetype(ltype0);
-	//const int pieceCnt1 = GetPieceCntFromlinetype(ltype1);
-	//const int emptyCnt0 = GetEmptyCntFromlinetype(ltype0);
-	//const int emptyCnt1 = GetEmptyCntFromlinetype(ltype1);
-	//const int wallCnt0 = GetWallCntFromlinetype(ltype0);
-	//const int wallCnt1 = GetWallCntFromlinetype(ltype1);
-
 	if (isComb0 && isComb1)
 	{
 		return CompareCombinationLineType(ltype0, ltype1);
@@ -68,57 +61,7 @@ bool CompareLineType(const linetype ltype0, const linetype ltype1)
 
 	const int score0 = GetLinetypeScore(ltype0);
 	const int score1 = GetLinetypeScore(ltype1);
-	//if (score0==score1)
-	//	return 1;
-	
 	return score0 < score1;
-
-	//if (pieceCnt0 > pieceCnt1)
-	//{
-	//	if (wallCnt0 == wallCnt1)
-	//		return 0;
-	//	if (wallCnt0 < wallCnt1)
-	//		return 0;
-	//	if (4 == pieceCnt0)
-	//		return 0;
-	//	if ((2 == wallCnt0) && (3 == pieceCnt0) && (2 == emptyCnt0))
-	//		return 0;
-	//	if ((2 == wallCnt0) && (2 > wallCnt1))
-	//		return 1;
-	//	// 나머지 wallCnt0 = 1, wallCnt1 = 0
-	//	return 0;
-	//}
-	//else if (pieceCnt0 < pieceCnt1)
-	//{
-	//	if (wallCnt0 == wallCnt1)
-	//		return 1;
-	//	if (wallCnt0 > wallCnt1)
-	//		return 1;
-	//	if (4 == pieceCnt1)
-	//		return 1;
-	//	if ((2 == wallCnt1) && (3 == pieceCnt1) && (2 == emptyCnt1))
-	//		return 1;
-	//	if ((2 == wallCnt1) && (2 > wallCnt0))
-	//		return 0;
-	//	// 나머지 wallCnt1 = 1, wallCnt2 = 0
-	//	return 1;
-	//}
-	//else
-	//{
-	//	if (wallCnt0 < wallCnt1)
-	//	{
-	//		return 0;
-	//	}
-	//	else if (wallCnt0 > wallCnt1)
-	//	{
-	//		return 1;
-	//	}
-	//	else
-	//	{
-	//		return 1;
-	//	}
-	//}
-//	return 1;
 }
 
 
@@ -128,7 +71,7 @@ bool CompareLineType(const linetype ltype0, const linetype ltype1)
 */
 bool IsCombinationLineType(const linetype ltype)
 {
-	return (ltype / 1000) > 0;
+	return (ltype / 10000) > 0;
 }
 
 
@@ -222,115 +165,130 @@ int GetLinetypeScore(const linetype ltype)
 
 	const int pieceCnt0 = GetPieceCntFromlinetype(ltype);
 	const int emptyCnt0 = GetEmptyCntFromlinetype(ltype);
-	const int wallCnt0 = GetWallCntFromlinetype(ltype);
+	const int firstCnt0 = GetFirstCntFromlinetype(ltype);
+	const int lastCnt0 = GetLastCntFromlinetype(ltype);
+	const int length0 = pieceCnt0 + emptyCnt0 + firstCnt0 + lastCnt0;
 	
-	if (pieceCnt0 > 6)
+	if (pieceCnt0 >= 6)
 	{
 		int a = 0;
 	}
 	else if (pieceCnt0 == 5)
 	{
 		//X111101X
-		if (emptyCnt0 == 1)
-		{
-			// X111101X
-			if (wallCnt0 >= 2)
-				return 0;
-			return 100;
-		}
-		else if (emptyCnt0 >= 2)
-		{
-			// 1010111, 1110101
-			if (emptyCnt0 == 2) // 예외 X1101011X -> X
-			{
-				return 100;
-			}
-			else
-			{
-				if (wallCnt0 == 0)
-					return 30; // 11010101
-				else if (wallCnt0 == 1)
-					return 20;
-				else if (wallCnt0 >= 2)
-					return 0; // X10110101X
-				
-				// 0111101X -> ok (이미 처리된 상태)
-				// X111101 -> X
-				return 30;
-			}
-		}
+		//if (emptyCnt0 == 1)
+		//{
+		//	//// X111101X
+		//	//if (length0 >= 2)
+		//	//	return 0;
+		//	return 100;
+		//}
+		//else if (emptyCnt0 >= 2)
+		//{
+		//	// 1010111, 1110101
+		//	if (emptyCnt0 == 2) // 예외 X1101011X -> X
+		//	{
+		//		return 100;
+		//	}
+		//	else
+		//	{
+		//		//if (length0 == 0)
+		//		//	return 30; // 11010101
+		//		else if (length0 == 1)
+		//			return 20;
+		//		else if (length0 >= 2)
+		//			return 0; // X10110101X
+		//		
+		//		// 0111101X -> ok (이미 처리된 상태)
+		//		// X111101 -> X
+		//		return 30;
+		//	}
+		//}
 
 		return 100;
 	}
 
 	if (pieceCnt0 == 4)
 	{
-		if (wallCnt0 == 0)
+		if (length0 > 5) 
 		{
 			return 49;
 		}
-		else if (wallCnt0 == 1)
+		else if (length0 == 5)
 		{
-			if (emptyCnt0 == 0)
-				return 46;
-			else if (emptyCnt0 == 1) // 11011
-				return 46;
-			else // 101101, 110101
-				return 40;
+		//	//if (emptyCnt0 == 0)
+		//	//	return 46;
+		//	//if (emptyCnt0 == 1) // 11011
+		//	//	return 46;
+		//	//else // 101101, 110101
+		//	//	return 40;
+		//	return 40;
+			return 40;
 		}
-		else
+		else 
 		{
-			if (emptyCnt0 == 0)
-				return 0;
-			else if (emptyCnt0 == 1) // X11011X
-				return 46;
-			else
-				return 0;
+			//if (emptyCnt0 == 0)
+			//	return 0;
+			//else if (emptyCnt0 == 1) // X11011X
+			//	return 46;
+			//else
+			//	return 0;
+			return 0;
 		}
 	}
 	else if (pieceCnt0 == 3)
 	{
-		if (wallCnt0 == 0)
-		{
-			if (emptyCnt0 == 0)
-				return 39;
-			else if (emptyCnt0 == 1) // 1101
-				return 39;
-			else // 10101
-				return 30;
-		}
-		else if (wallCnt0 == 1)
-		{
-			return 30;
-		}
+		if (length0 <= 4)
+			return 0; // X111X, X1101X, X1110X
 		else
 		{
-			if (emptyCnt0 == 2) // X10101X
-				return 30;
-			return 0;
+			if ((emptyCnt0==1) && (firstCnt0 >= 1) && (lastCnt0 >= 1))
+				return 39; // 011010, 010110
+			else if ((emptyCnt0 <= 0) && (firstCnt0 >= 1) && (lastCnt0 >= 1))
+				return 39; // 01110
+			else if ((emptyCnt0 <= 1) && ((firstCnt0 >= 1) || (lastCnt0 >= 1)))
+				return 30; // 0111X, X11010
+			else if (emptyCnt0 >= 2)
+				return 30; // 10101, 11001
+			else
+				return 0;
 		}
+
+		//if (firstCnt0 == 0)
+		//{
+		//	if (emptyCnt0 == 0)
+		//		return 39;
+		//	else if (emptyCnt0 == 1) // 1101
+		//		return 39;
+		//	else // 10101
+		//		return 30;
+		//}
+		//else if (firstCnt0 == 1)
+		//{
+		//	return 30;
+		//}
+		//else
+		//{
+		//	if (emptyCnt0 == 2) // X10101X
+		//		return 30;
+		//	return 0;
+		//}
 	}
 	else if (pieceCnt0 == 2)
 	{
-		if (wallCnt0 == 0)
-		{
-			return 29;
-		}
-		else if (wallCnt0 == 1)
-		{
-			return 20;
-		}
-		else
-		{
+		if (length0 < 4) // maximum -> 001100, minimum -> 1100
 			return 0;
-		}
+		else if ((emptyCnt0==0) && (length0 < 5))
+			return 0; // X0110X
+		else if ((firstCnt0 >= 1) || (lastCnt0 >= 1))
+			return 29; // 0110, 01010
+		else 
+			return 20; // X11000
 	}
 	else if (pieceCnt0 == 1)
 	{
-		if (wallCnt0 == 0)
-			return 10;
-		else if (wallCnt0 == 1)
-			return 5;
+		if ((firstCnt0 >= 2) || (lastCnt0 >= 2))
+			return 10; // 001, 100, 00100
 		else
 			return 0;
 	}

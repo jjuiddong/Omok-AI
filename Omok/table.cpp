@@ -41,6 +41,7 @@ void CTable::Init()
 	m_brushes[2] = ::CreateSolidBrush(RGB(235,235,235));
 	m_brushes[3] = ::CreateSolidBrush(RGB(50,50,50));
 	m_brushes[4] = ::CreateSolidBrush(RGB(255,255,0));
+
 }
 
 
@@ -89,6 +90,8 @@ void CTable::Render(HDC hdc)
 	}
 
 	// render white piece
+	SetBkMode(hdc, TRANSPARENT);
+	SetTextColor(hdc, RGB(0,0,0));
 	SelectObject(hdc, m_brushes[ 0]);
 	for (unsigned int i=0; i < m_table.whites.size(); ++i)
 	{
@@ -100,9 +103,18 @@ void CTable::Render(HDC hdc)
 		if (m_table.whites.size()-1 == i)
 			SelectObject(hdc, m_brushes[ 2]);
 		Ellipse(hdc, r.left, r.top, r.right, r.bottom);
+
+		if (m_isDisplayNumber)
+		{
+			stringstream ss;
+			ss << i+1;
+			string s = ss.str();
+			TextOutA(hdc, r.left+4, r.top+4, s.c_str(), s.length());
+		}
 	}
 
 	// render black piece
+	SetTextColor(hdc, RGB(255,255,255));
 	SelectObject(hdc, m_brushes[ 1]);
 	for (unsigned int i=0; i < m_table.blacks.size(); ++i)
 	{
@@ -122,10 +134,19 @@ void CTable::Render(HDC hdc)
 		{
 			Ellipse(hdc, r.left, r.top, r.right, r.bottom);
 		}
+
+		if (m_isDisplayNumber)
+		{
+			stringstream ss;
+			ss << i+1;
+			string s = ss.str();
+			TextOutA(hdc, r.left+4, r.top+4, s.c_str(), s.length());
+		}
 	}
 	
 	if ((WIN_BLACK == m_state) || (WIN_WHITE == m_state))
 	{
+		SetTextColor(hdc, RGB(0,0,0));
 		SelectObject(hdc, m_brushes[ 0]);
 		Rectangle(hdc, 300, 0,400, 30);
 		string msg[2] ={string("Black Win!!"), string("White Win!!")};
@@ -135,12 +156,20 @@ void CTable::Render(HDC hdc)
 			TextOutA(hdc, 320, 4, msg[1].c_str(), msg[1].length());
 	}
 
-	// 오목 인공지능 계산에 걸린 시간 출력
-	{
+
+	// 설명문구 출력.
+	SetTextColor(hdc, RGB(0,0,0));
+	{	// 오목 인공지능 계산에 걸린 시간 출력
 		stringstream ss;
 		ss << "ai process time(millisecond): " << m_procTime;
 		const string str = ss.str();
-		TextOutA(hdc, 10, 4, str.c_str(), str.length());
+		TextOutA(hdc, 10, 0, str.c_str(), str.length());
+	}
+	{ // 키설명
+		stringstream ss;
+		ss << "tab key : display number";
+		const string str = ss.str();
+		TextOutA(hdc, 10, 16, str.c_str(), str.length());
 	}
 }
 
