@@ -171,40 +171,10 @@ int GetLinetypeScore(const linetype ltype)
 	
 	if (pieceCnt0 >= 6)
 	{
-		int a = 0;
+		// nothing
 	}
 	else if (pieceCnt0 == 5)
 	{
-		//X111101X
-		//if (emptyCnt0 == 1)
-		//{
-		//	//// X111101X
-		//	//if (length0 >= 2)
-		//	//	return 0;
-		//	return 100;
-		//}
-		//else if (emptyCnt0 >= 2)
-		//{
-		//	// 1010111, 1110101
-		//	if (emptyCnt0 == 2) // 예외 X1101011X -> X
-		//	{
-		//		return 100;
-		//	}
-		//	else
-		//	{
-		//		//if (length0 == 0)
-		//		//	return 30; // 11010101
-		//		else if (length0 == 1)
-		//			return 20;
-		//		else if (length0 >= 2)
-		//			return 0; // X10110101X
-		//		
-		//		// 0111101X -> ok (이미 처리된 상태)
-		//		// X111101 -> X
-		//		return 30;
-		//	}
-		//}
-
 		return 100;
 	}
 
@@ -216,23 +186,10 @@ int GetLinetypeScore(const linetype ltype)
 		}
 		else if (length0 == 5)
 		{
-		//	//if (emptyCnt0 == 0)
-		//	//	return 46;
-		//	//if (emptyCnt0 == 1) // 11011
-		//	//	return 46;
-		//	//else // 101101, 110101
-		//	//	return 40;
-		//	return 40;
 			return 40;
 		}
 		else 
 		{
-			//if (emptyCnt0 == 0)
-			//	return 0;
-			//else if (emptyCnt0 == 1) // X11011X
-			//	return 46;
-			//else
-			//	return 0;
 			return 0;
 		}
 	}
@@ -253,26 +210,6 @@ int GetLinetypeScore(const linetype ltype)
 			else
 				return 0;
 		}
-
-		//if (firstCnt0 == 0)
-		//{
-		//	if (emptyCnt0 == 0)
-		//		return 39;
-		//	else if (emptyCnt0 == 1) // 1101
-		//		return 39;
-		//	else // 10101
-		//		return 30;
-		//}
-		//else if (firstCnt0 == 1)
-		//{
-		//	return 30;
-		//}
-		//else
-		//{
-		//	if (emptyCnt0 == 2) // X10101X
-		//		return 30;
-		//	return 0;
-		//}
 	}
 	else if (pieceCnt0 == 2)
 	{

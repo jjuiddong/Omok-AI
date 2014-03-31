@@ -39,7 +39,7 @@ enum PIECE {
 	WALL,
 };
 
-typedef int linetype; // pieceCount + emptyCount + lineLength
+typedef int linetype; // pieceCount + emptyCount + firstEmptyCnt + lastEmptyCnt
 
 
 /**
@@ -66,7 +66,6 @@ struct Pos
 		return (x==rhs.x) && (y == rhs.y);
 	}
 	bool operator<(const Pos &rhs) const {
-		//return (x<rhs.x) && (y<rhs.y);
 		return (x*100+y) < (rhs.x*100+rhs.y);
 	}
 	Pos operator+(const Pos &rhs) const {
