@@ -125,10 +125,6 @@ void CTable::Render(HDC hdc)
 
 		if (m_table.blacks.size()-1 == i)
 		{
-			//SelectObject(hdc, m_brushes[ 0]);
-			//Ellipse(hdc, r.left, r.top, r.right, r.bottom);
-			//SelectObject(hdc, m_brushes[ 1]);
-			//Ellipse(hdc, r.left+2, r.top+2, r.right-2, r.bottom-2);
 			SelectObject(hdc, m_brushes[ 1]);
 			Ellipse(hdc, r.left, r.top, r.right, r.bottom);
 		}

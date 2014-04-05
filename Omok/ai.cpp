@@ -1,4 +1,3 @@
-
 #include "stdafx.h"
 #include "ai.h"
 #include "separator.h"
@@ -77,7 +76,7 @@ using namespace ai;
 GAME_STATE ai::SearchBestLocation( STable &table, const PIECE pieceType, OUT Pos &out )
 {
 	g_totalCnt = 0;
-	SearchResult result = RecursiveSearch(table, pieceType, pieceType, 4);
+	SearchResult result = RecursiveSearch(table, pieceType, pieceType, 6);
 
 	out = result.pos;
 	return GAME;
@@ -126,7 +125,9 @@ SearchResult ai::RecursiveSearch( STable &table, const PIECE pieceType, const PI
 		Pos pos = RandLocation(table, pieceType);
 		candidates.push_back(SCandidate(pos, 0));
 	}
-	
+
+	const int highestScore = GetLinetypeScore(candidates.back().ltype);
+
 	int procCnt = 0;
 	int maxCnt = 4;
 	vector<SResultInfo> results;
@@ -135,6 +136,10 @@ SearchResult ai::RecursiveSearch( STable &table, const PIECE pieceType, const PI
 	{
 		if (++procCnt > maxCnt)
 			break;
+
+		const int score = GetLinetypeScore(cand.ltype);
+		if ((highestScore>=30) && (highestScore > score))
+			continue;	
 
 		STable newTable = table;
 		SetPiece(newTable, cand.pos, pieceType);
